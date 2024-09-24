@@ -58,3 +58,34 @@ class Rules:
     
     def __hash__(self):
       return hash((self.conclusion, self.defeasible)) * hash(tuple(self.premises))
+  
+
+class Argument:
+    def __init__(self, premises: set[Literals], conclusion: Literals, rules_used: set[Rules]) -> None:
+        self.premises = premises
+        self.conclusion = conclusion
+        self.rules_used = rules_used
+    
+    def get_premises(self) -> set[Literals] | None:
+        if len(self.premises) == 0:
+            return None
+        else:
+            return self.premises
+    
+    def get_conclusion(self) -> Literals:
+        return self.conclusion
+    
+    def get_rules_used(self) -> set[Rules]:
+        return self.rules_used
+  
+
+class ArgumentsFinder:
+    
+    def __init__(self, language: set[Literals], assumptions: set[Literals], rules: set[Rules]) -> None:
+        self.language = language
+        self.assumptions = assumptions
+        self.rules = rules
+    
+    def compute_arguments() -> set[Argument]:
+        computed_args = set()
+        
