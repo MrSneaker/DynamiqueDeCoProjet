@@ -32,15 +32,12 @@ class Rules:
         self.name = Rules.setRef()
         self.premises = s1
         self.conclusion = s2
-        self.defeasible = b
 
     def __str__(self) -> str:
         premises_str = ', '.join(map(str, self.premises))
         #conclusion_str = ', '.join(map(str, self.conclusion))
         conclusion_str = self.conclusion
-        if self.defeasible:
-            return f"r{self.name} : [{premises_str}] => [{conclusion_str}]"
-        return f"r{self.name} : [{premises_str}] -> [{conclusion_str}]"
+        return f"r{self.name} : [{conclusion_str}] <- [{premises_str}]"
     
     @classmethod
     def setRef(cls):
@@ -51,10 +48,9 @@ class Rules:
         if isinstance(other, Rules):
             return (
                 self.premises == other.premises and 
-                self.conclusion == other.conclusion and 
-                self.defeasible == other.defeasible
+                self.conclusion == other.conclusion
             )
         return False
     
     def __hash__(self):
-      return hash((self.conclusion, self.defeasible)) * hash(tuple(self.premises))
+      return hash((self.conclusion)) * hash(tuple(self.premises))
