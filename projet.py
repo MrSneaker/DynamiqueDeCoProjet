@@ -82,7 +82,17 @@ class ArgumentsFinder:
         self.assumptions = assumptions
         self.rules = rules
     
-    def compute_arguments() -> set[Argument]:
+    def compute_arguments(self) -> set[Argument]:
         computed_args = set()
         
-
+        for rule in self.rules:
+            if rule.premises in self.assumptions or rule.premises is None:
+                arg_premises = self.assumptions.union(rule.premises)
+                computed_args.add(Argument(premises=arg_premises, conclusion=rule.conclusion, rules_used=set(rule)))
+        return computed_args
+                
+        
+        
+if __name__ == "__main__":
+    langage = set[Literals]('a','b','c','q','p','r','s','t')
+    rules = set[Rules](Rules(set(Literals())))
