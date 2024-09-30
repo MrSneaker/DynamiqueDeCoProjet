@@ -130,9 +130,6 @@ class ArgumentsFinder:
                     )
                     arg_premises = self.assumptions.intersection(rule.premises)
                     full_premises = premises_used.union(arg_premises)
-                    print(f'full_prem type is {type(full_premises)}')
-                    for prem in full_premises:
-                        print(f'prem in full prem type is {type(prem)}')
                     new_arg = Argument(
                         premises=full_premises, conclusion=rule.conclusion, rules_used=set([rule]))
                     new_args.add(new_arg)
@@ -147,6 +144,7 @@ class ArgumentsFinder:
 
 
 if __name__ == "__main__":
+    # exo 1 TD4
     langage = set[Literals]([Literals('a', None), Literals('b', None), Literals('c', None), Literals(
         'q', None), Literals('p', None), Literals('r', None), Literals('s', None), Literals('t', None)])
     assumptions = set[Literals](
