@@ -101,7 +101,7 @@ class ArgumentsFinder:
         rules_used = []
         for rule in rules_usable:
             rule_activable = len(
-                self.assumptions.intersection(rule.premises)) > 0
+                self.assumptions.intersection(rule.premises)) >= len(rule.premises)
             if rule_activable or len(rule.premises) == 0:
                 arg_premises = self.assumptions.intersection(rule.premises)
                 new_arg = Argument(
@@ -120,12 +120,12 @@ class ArgumentsFinder:
             for rule in rules_usable:
                 used_args_conclusions = set(
                     [arg.get_conclusion() for arg in old_args]).intersection(rule.premises)
-                rule_activable = len(used_args_conclusions) > 0
+                rule_activable = len(used_args_conclusions) >= len(rule.premises)
                 if rule_activable or len(rule.premises) == 0:
                     premises_used = set(
                         premise
                         for arg in old_args
-                        if arg.get_conclusion() in used_args_conclusions
+                        if arg.get_conclusion() in used_args_conclusions and arg.get_premises() is not None
                         for premise in arg.get_premises()
                     )
                     arg_premises = self.assumptions.intersection(rule.premises)
