@@ -5,7 +5,7 @@ def parse_input(input_string: str):
     language = set()
     rules = set()
     assumptions_and_contraries = {}
-    lines = input_string.split('\n')
+    lines = input_string.strip().split('\n')
     for line in lines:
         if line.startswith('L:'):
             L = re.findall(r'\w+', line[2:])
