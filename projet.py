@@ -85,6 +85,69 @@ class Argument:
         rules_str = ', '.join(map(str, self.rules_used)
                               ) if self.rules_used else "None"
         return f"Argument:\n  Premises: [{premises_str}]\n  Conclusion: {conclusion_str}\n  Rules used: [{rules_str}]"
+    
+    
+class ABAPlus:
+    def __init__(self, language: set[Literals], assumptions_and_contraries: dict[Literals: Literals], rules: set[Rules]) -> None:
+        self.language = language
+        self.assumptions = set([k for k,v in assumptions_and_contraries.items()])
+        self.contraries = set([v for k,v in assumptions_and_contraries.items()])
+        self.rules = rules
+    
+    def compute_arguments(self) -> set[Argument]:
+        computed_args = set()
+        rules_usable = self.rules
+
+        rules_used = []
+        for rule in rules_usable:
+            rule_activable = len(
+                self.assumptions.intersection(rule.premises)) >= len(rule.premises)
+            if rule_activable or len(rule.premises) == 0:
+                arg_premises = self.assumptions.intersection(rule.premises)
+                new_arg = Argument(
+                    premises=arg_premises, conclusion=rule.conclusion, rules_used=set([rule]))
+                computed_args.add(new_arg)
+                rules_used.append(rule)
+        for rule in rules_used:
+            print(f'rule used : {rule}')
+        rules_usable.difference_update(rules_used)
+
+        for assumption in self.assumptions:
+            computed_args.add(Argument(set([assumption]), assumption, None))
+
+        old_args = computed_args.copy()
+        new_args = computed_args.copy()
+        while True:
+            rules_used = []
+            for rule in rules_usable:
+                used_args_conclusions = set(
+                    [arg.get_conclusion() for arg in old_args]).intersection(rule.premises)
+                rule_activable = len(used_args_conclusions) >= len(rule.premises)
+                if rule_activable or len(rule.premises) == 0:
+                    premises_used = set(
+                        premise
+                        for arg in old_args
+                        if arg.get_conclusion() in used_args_conclusions and arg.get_premises() is not None
+                        for premise in arg.get_premises()
+                    )
+                    arg_premises = self.assumptions.intersection(rule.premises)
+                    full_premises = premises_used.union(arg_premises)
+                    new_arg = Argument(
+                        premises=full_premises, conclusion=rule.conclusion, rules_used=set([rule]))
+                    if new_arg not in new_args:
+                        new_args.add(new_arg)
+                        rules_used.append(rule)
+            
+            rules_usable.difference_update(set(rules_used))
+            if old_args == new_args:
+                break
+            else:
+                old_args = new_args.copy()
+        computed_args = new_args
+
+        return computed_args
+
+
 
 
 class ArgumentsFinder:
@@ -108,6 +171,7 @@ class ArgumentsFinder:
                     premises=arg_premises, conclusion=rule.conclusion, rules_used=set([rule]))
                 computed_args.add(new_arg)
                 rules_used.append(rule)
+        print(f'rule used : {rules_used}')
         rules_usable.difference_update(rules_used)
 
         for assumption in self.assumptions:
@@ -147,13 +211,12 @@ if __name__ == "__main__":
     # exo 1 TD4
     langage = set[Literals]([Literals('a', None), Literals('b', None), Literals('c', None), Literals(
         'q', None), Literals('p', None), Literals('r', None), Literals('s', None), Literals('t', None)])
-    assumptions = set[Literals](
-        [Literals('a', None), Literals('b', None), Literals('c', None)])
+    assumptions = {Literals('a', None): Literals('r', None), Literals('b', None): Literals('s', None), Literals('c', None): Literals('t', None)}
     rules = set[Rules]([Rules(set([Literals('q', None), Literals('a', None)]), Literals('p', None)), Rules(set(), Literals('q', None)), Rules(set([Literals('b', None), Literals(
         'c', None)]), Literals('r', None)), Rules(set([Literals('p', None), Literals('c', None)]), Literals('t', None)), Rules(set([Literals('t', None)]), Literals('s', None))])
 
-    arg_finder = ArgumentsFinder(langage, assumptions, rules)
-    args = arg_finder.compute_arguments()
+    aba = ABAPlus(langage, assumptions, rules)
+    args = aba.compute_arguments()
 
     for arg in args:
         print(arg)
