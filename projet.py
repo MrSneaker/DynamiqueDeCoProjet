@@ -1,8 +1,7 @@
+import re
+from collections import defaultdict
 from itertools import chain, product
 import os
-
-from cv2 import compare
-
 
 class Literals:
 
@@ -176,8 +175,57 @@ if __name__ == "__main__":
 
     aba = ABAPlus(langage, assumptions, rules)
     args = aba.compute_arguments()
-
+    
     for arg in args:
         print(arg)
 
     print(f'number of args is {len(args)}')
+    
+def parse_input(input_string):
+    L = []
+    A = []
+    C = {}
+    R = {}
+    PREF = defaultdict(list)
+    lines = input_string.split('\n')
+    for line in lines:
+        if line.startswith('L:'):
+            print("im here")
+            L = re.findall(r'\w+', line[2:])
+        elif line.startswith('A:'):
+            A = re.findall(r'\w+', line[2:])
+        elif line.startswith('C('):
+            match = re.match(r'C\((\w+)\):\s*(\w+)', line)
+            if match:
+                C[match.group(1)] = match.group(2)
+        elif line.startswith('[r'):
+            match = re.match(r'\[r\d+\]:\s*(\w+)\s*<-\s*(.*)', line)
+            if match:
+                head = match.group(1)
+                body = re.findall(r'\w+', match.group(2))
+                R[head] = body
+        elif line.startswith('PREF:'):
+            pref = line[5:]
+            left, right = pref.split('>')
+            left_items = left.strip().split(',')
+            right_items = right.strip().split()
+            for item in left_items:
+                PREF[item].extend(right_items)
+    return L, A, C, R, PREF
+
+
+L, A, C, R, PREF = parse_input("""
+L: [a,b,c,q,p,r,s,t]
+A: [a,b,c]
+C(a): r
+C(b): s
+C(c): t
+[r1]: p <- q,a
+[r2]: q <-
+[r3]: r <- b,c
+[r4]: t <- p,c
+[r5]: s <- t
+PREF: a,b > c
+""")
+
+print(L, A, C, R, PREF)
