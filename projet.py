@@ -1,8 +1,7 @@
+import re
+from collections import defaultdict
 from itertools import chain, product
 import os
-
-from cv2 import compare
-
 
 class Literals:
 
@@ -141,21 +140,68 @@ class ArgumentsFinder:
         computed_args = new_args
 
         return computed_args
+    
+def parse_input(input_string):
+    L = []
+    A = []
+    C = {}
+    R = {}
+    PREF = defaultdict(list)
+    lines = input_string.split('\n')
+    for line in lines:
+        if line.startswith('L:'):
+            print("im here")
+            L = re.findall(r'\w+', line[2:])
+        elif line.startswith('A:'):
+            A = re.findall(r'\w+', line[2:])
+        elif line.startswith('C('):
+            match = re.match(r'C\((\w+)\):\s*(\w+)', line)
+            if match:
+                C[match.group(1)] = match.group(2)
+        elif line.startswith('[r'):
+            match = re.match(r'\[r\d+\]:\s*(\w+)\s*<-\s*(.*)', line)
+            if match:
+                head = match.group(1)
+                body = re.findall(r'\w+', match.group(2))
+                R[head] = body
+        elif line.startswith('PREF:'):
+            pref = line[5:]
+            left, right = pref.split('>')
+            left_items = left.strip().split(',')
+            right_items = right.strip().split()
+            for item in left_items:
+                PREF[item].extend(right_items)
+    return L, A, C, R, PREF
 
 
-if __name__ == "__main__":
-    # exo 1 TD4
-    langage = set[Literals]([Literals('a', None), Literals('b', None), Literals('c', None), Literals(
-        'q', None), Literals('p', None), Literals('r', None), Literals('s', None), Literals('t', None)])
-    assumptions = set[Literals](
-        [Literals('a', None), Literals('b', None), Literals('c', None)])
-    rules = set[Rules]([Rules(set([Literals('q', None), Literals('a', None)]), Literals('p', None)), Rules(set(), Literals('q', None)), Rules(set([Literals('b', None), Literals(
-        'c', None)]), Literals('r', None)), Rules(set([Literals('p', None), Literals('c', None)]), Literals('t', None)), Rules(set([Literals('t', None)]), Literals('s', None))])
+L, A, C, R, PREF = parse_input("""
+L: [a,b,c,q,p,r,s,t]
+A: [a,b,c]
+C(a): r
+C(b): s
+C(c): t
+[r1]: p <- q,a
+[r2]: q <-
+[r3]: r <- b,c
+[r4]: t <- p,c
+[r5]: s <- t
+PREF: a,b > c
+""")
 
-    arg_finder = ArgumentsFinder(langage, assumptions, rules)
-    args = arg_finder.compute_arguments()
+print(L, A, C, R, PREF)
 
-    for arg in args:
-        print(arg)
+# exo 1 TD4
+langage = set[Literals]([Literals('a', None), Literals('b', None), Literals('c', None), Literals(
+    'q', None), Literals('p', None), Literals('r', None), Literals('s', None), Literals('t', None)])
+assumptions = set[Literals](
+    [Literals('a', None), Literals('b', None), Literals('c', None)])
+rules = set[Rules]([Rules(set([Literals('q', None), Literals('a', None)]), Literals('p', None)), Rules(set(), Literals('q', None)), Rules(set([Literals('b', None), Literals(
+    'c', None)]), Literals('r', None)), Rules(set([Literals('p', None), Literals('c', None)]), Literals('t', None)), Rules(set([Literals('t', None)]), Literals('s', None))])
 
-    print(f'number of args is {len(args)}')
+arg_finder = ArgumentsFinder(langage, assumptions, rules)
+args = arg_finder.compute_arguments()
+
+for arg in args:
+    print(arg)
+
+print(f'number of args is {len(args)}')
