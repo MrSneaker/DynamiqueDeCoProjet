@@ -30,5 +30,4 @@ def parse_input(input_string: str):
             pref_match = re.findall(r'(\w+)\s*>\s*(\w+)', line[5:].strip())
             for greater, lesser in pref_match:
                 prefs[Literals(greater, None)] = Literals(lesser, None)
-            # later
     return language, assumptions_and_contraries, rules, prefs
