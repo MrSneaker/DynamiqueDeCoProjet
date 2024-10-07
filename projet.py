@@ -1,3 +1,4 @@
+import itertools
 import re
 from collections import defaultdict
 from itertools import chain, product
@@ -108,12 +109,13 @@ class Argument:
     
     
 class ABAPlus:
-    def __init__(self, language: set[Literals], assumptions_and_contraries: dict[Literals: Literals], rules: set[Rules]) -> None:
+    def __init__(self, language: set[Literals], assumptions_and_contraries: dict[Literals: Literals], rules: set[Rules], prefs: dict[Literals: Literals]) -> None:
         self.language = language
         self.assumptions = set([k for k,v in assumptions_and_contraries.items()])
         self.assumptions_and_contraries = assumptions_and_contraries
         self.rules = rules
         self.arguments = set[Argument]()
+        self.prefs = prefs
         
     def get_language(self):
         return self.language
@@ -203,10 +205,59 @@ class ABAPlus:
         
         return attacks
     
+    
     def compute_normal_attacks(self):
-        return
-    
-    
+        normal_attacks = set()
+        assumptions_list = list(self.assumptions)
+
+        all_subsets = [set(combo) for r in range(len(assumptions_list) + 1) for combo in itertools.combinations(assumptions_list, r)]
+        
+        print(len(all_subsets))
+        
+        def derive_conclusion(subset):
+            conclusions = set()
+            for arg in self.arguments:
+                if arg.get_premises() is not None:
+                    if arg.get_premises().issubset(subset):
+                        conclusions.add(arg.get_conclusion())
+            if len(conclusions) > 0:
+                return conclusions
+            return None
+
+        for X in all_subsets:
+            for Y in all_subsets:
+                if len(X) == 0 or len(Y) == 0:
+                    continue
+
+                claim_y = derive_conclusion(Y)
+                
+                if claim_y is None:
+                    continue
+                # X_str = '{' + ', '.join(map(str, X)) + '}'
+                # print(f'X is {X_str}')
+                # print(f'conclusion for X are :')
+                for concl in claim_y:
+                    print(concl)
+                
+                working_claims = set()
+                
+                for claim in claim_y:
+                    if claim in [self.assumptions_and_contraries.get(x) for x in X]:
+                        working_claims.add(claim)
+                
+                if working_claims:
+                    print('Attaque normale trouvée')
+                    
+                    # for x_prime in X:
+                    #     for concl_y in working_claims:
+                    #         print(f'x_prime is {x_prime}, x_prime in pref : {(concl_y, x_prime) in self.prefs.items()}')
+                        
+                    if not any((claim, x_prime) in self.prefs.items() for claim in working_claims for x_prime in X):
+                        X_str = ', '.join(map(str, X))
+                        Y_str = ', '.join(map(str, Y))
+                        normal_attacks.add(f"{X_str} -> {Y_str}")
+
+        return normal_attacks
     
 if __name__ == "__main__":
     # exo 1 TD4
@@ -218,7 +269,9 @@ if __name__ == "__main__":
     rules = set[Rules]([Rules(set([Literals('q', None), Literals('a', None)]), Literals('p', None)), Rules(set(), Literals('q', None)), Rules(set([Literals('b', None), Literals(
         'c', None)]), Literals('r', None)), Rules(set([Literals('p', None), Literals('c', None)]), Literals('t', None)), Rules(set([Literals('t', None)]), Literals('s', None))])
 
-    aba = ABAPlus(langage, assumptions, rules)
+    prefs = {Literals('a', None): Literals('b', None)}
+    
+    aba = ABAPlus(langage, assumptions, rules, prefs)
     args = aba.compute_arguments()
     
     for arg in args:
@@ -229,6 +282,12 @@ if __name__ == "__main__":
     attacks = aba.compute_attacks()
     for attack in attacks:
         print(attack)
+    
+    normal_attacks = aba.compute_normal_attacks()
+    print(f'len normal att: {len(normal_attacks)}')
+    
+    for n_att in normal_attacks:
+        print(n_att)
     
     
     
