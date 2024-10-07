@@ -5,6 +5,7 @@ def parse_input(input_string: str):
     language = set()
     rules = set()
     assumptions_and_contraries = {}
+    prefs = dict()
     lines = input_string.strip().split('\n')
     for line in lines:
         if line.startswith('L:'):
@@ -13,7 +14,7 @@ def parse_input(input_string: str):
                 language.add(Literals(l, None))
         elif line.startswith('C('):
             key, value = line.split(': ')
-            key = key[2]
+            key = re.findall(r'\((.*?)\)', key)[0]
             value = value.strip()
             assumptions_and_contraries[Literals(key, None)] = Literals(value, None)
         elif line.startswith('[r'):
@@ -25,6 +26,9 @@ def parse_input(input_string: str):
                 for p in body:
                     set_premises.add(Literals(p, None))
                 rules.add(Rules(set_premises, Literals(head, None)))
-        # elif line.startswith('PREF:'):
+        elif line.startswith('PREF:'):
+            pref_match = re.findall(r'(\w+)\s*>\s*(\w+)', line[5:].strip())
+            for greater, lesser in pref_match:
+                prefs[Literals(greater, None)] = Literals(lesser, None)
             # later
-    return language, assumptions_and_contraries, rules
+    return language, assumptions_and_contraries, rules, prefs

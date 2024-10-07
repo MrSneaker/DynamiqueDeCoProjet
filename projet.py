@@ -205,59 +205,113 @@ class ABAPlus:
         
         return attacks
     
+        
+    def check_preference(self, claim, x_prime):
+        """Vérifie si la préférence entre deux éléments existe et retourne True si elle est valide."""
+        return (claim, x_prime) in self.prefs.items()
+
+    def derive_conclusion(self, subset):
+            conclusions = set()
+            for arg in self.arguments:
+                print(f'rule : {arg}')
+                if arg.get_premises() is not None and arg.get_premises().issubset(subset):
+                    conclusions.add(arg.get_conclusion())
+            return conclusions if conclusions else None
+
+
+        
+    # def compute_normal_attacks(self):
+    #     normal_attacks = set()
+    #     assumptions_list = list(self.assumptions)
+
+    #     all_subsets = [set(combo) for r in range(len(assumptions_list) + 1) for combo in itertools.combinations(assumptions_list, r)]
+        
+    #     def derive_conclusion(subset):
+    #         conclusions = set()
+    #         for arg in self.arguments:
+    #             print(f'rule : {arg}')
+    #             if arg.get_premises() is not None and arg.get_premises().issubset(subset):
+    #                 conclusions.add(arg.get_conclusion())
+    #         return conclusions if conclusions else None
+
+    #     for X in all_subsets:
+    #         for Y in all_subsets:
+
+    #             claim_y = derive_conclusion(Y)
+    #             if claim_y is None:
+    #                 continue
+
+    #             working_claims = set()
+                
+    #             in_pref = False
+                
+    #             for claim in claim_y:
+    #                 for x_prime in X:
+    #                     if self.check_preference(claim, x_prime):
+    #                         in_pref = True
+    #                         break
+    #                 else:
+    #                     if claim in [self.assumptions_and_contraries.get(x) for x in X]:
+    #                         working_claims.add(claim)
+
+    #             if working_claims:
+    #                 if not any(self.check_preference(claim, x_prime) for claim in working_claims for x_prime in X):
+    #                     X_str = ', '.join(map(str, X))
+    #                     Y_str = ', '.join(map(str, Y))
+    #                     normal_attacks.add(f"{X_str} -> {Y_str}")
+
+    #     return normal_attacks
     
-    def compute_normal_attacks(self):
+    def compute_normal_attacks2(self):
         normal_attacks = set()
         assumptions_list = list(self.assumptions)
 
         all_subsets = [set(combo) for r in range(len(assumptions_list) + 1) for combo in itertools.combinations(assumptions_list, r)]
         
-        print(len(all_subsets))
-        
-        def derive_conclusion(subset):
-            conclusions = set()
-            for arg in self.arguments:
-                if arg.get_premises() is not None:
-                    if arg.get_premises().issubset(subset):
-                        conclusions.add(arg.get_conclusion())
-            if len(conclusions) > 0:
-                return conclusions
-            return None
-
         for X in all_subsets:
             for Y in all_subsets:
-                if len(X) == 0 or len(Y) == 0:
-                    continue
-
-                claim_y = derive_conclusion(Y)
+                
+                claim_y = self.derive_conclusion(Y)
+                claim_x = self.derive_conclusion(X)
+                
+                claim_x_none = False
+                claim_y_none = False
+                
+                if claim_x is None:
+                    claim_x_none = True
                 
                 if claim_y is None:
-                    continue
-                # X_str = '{' + ', '.join(map(str, X)) + '}'
-                # print(f'X is {X_str}')
-                # print(f'conclusion for X are :')
-                for concl in claim_y:
-                    print(concl)
+                    claim_y_none = True
                 
-                working_claims = set()
+                in_pref_y = False
+                if not claim_y_none:
+                    for claim in claim_y:
+                        for x_prime in X:
+                            if self.check_preference(claim, x_prime):
+                                in_pref_y = True
+                                break
                 
-                for claim in claim_y:
-                    if claim in [self.assumptions_and_contraries.get(x) for x in X]:
-                        working_claims.add(claim)
+                if not claim_x_none:
+                    in_pref_x = False
+                    for claim in claim_x:
+                        for y_prime in Y:
+                            if self.check_preference(claim, y_prime):
+                                in_pref_x = True
+                                break
                 
-                if working_claims:
-                    print('Attaque normale trouvée')
-                    
-                    # for x_prime in X:
-                    #     for concl_y in working_claims:
-                    #         print(f'x_prime is {x_prime}, x_prime in pref : {(concl_y, x_prime) in self.prefs.items()}')
-                        
-                    if not any((claim, x_prime) in self.prefs.items() for claim in working_claims for x_prime in X):
-                        X_str = ', '.join(map(str, X))
-                        Y_str = ', '.join(map(str, Y))
-                        normal_attacks.add(f"{X_str} -> {Y_str}")
-
+                if not claim_y_none:
+                    if not any(self.check_preference(claim, x_prime) for claim in claim_y for x_prime in X) and not in_pref_y:
+                            X_str = ', '.join(map(str, X))
+                            Y_str = ', '.join(map(str, Y))
+                            normal_attacks.add(f"{X_str} -> {Y_str}")
+                
+                if not claim_x_none:
+                    if not any(self.check_preference(claim, y_prime) for claim in claim_x for y_prime in Y) and not in_pref_x:
+                            X_str = ', '.join(map(str, X))
+                            Y_str = ', '.join(map(str, Y))
+                            normal_attacks.add(f"{Y_str} -> {X_str}")
         return normal_attacks
+                
     
 if __name__ == "__main__":
     # exo 1 TD4
