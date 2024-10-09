@@ -4,6 +4,8 @@ from collections import defaultdict
 from itertools import chain, product
 import os
 
+from anyio import key
+
 class Literals:
 
     def __init__(self, nom, neg):
@@ -204,21 +206,13 @@ class ABAPlus:
                             attacks.add("A" + str(arg1.get_id()) + " undermine " + "A" + str(arg2.get_id()))
         
         return attacks
-    
         
-    def check_preference(self, claim, x_prime):
-        """Vérifie si la préférence entre deux éléments existe et retourne True si elle est valide."""
-        return (claim, x_prime) in self.prefs.items()
+    def check_preference(self, x, y):
+        return (x, y) in self.prefs.items()
     
     def check_preference_set(self, X: set, Y: set):
         score_x = 0
         score_y = 0
-        
-        X = set(X)
-        Y = set(Y)
-        # si X contient uniquement un élément préféré  et qu'il est différent de Y il est forcément préféré à Y
-        if len(X) == 1 and X.issubset(self.prefs.keys()) and X != Y:
-            return True
         
         for x in X:
             for y in Y:
@@ -241,18 +235,45 @@ class ABAPlus:
         for X in all_subsets:
             for Y in all_subsets:
                 
-                X_str = ', '.join(str(x) for x in X)
-                Y_str = ', '.join(str(y) for y in Y)
-                                
+                X = set(X)
+                Y = set(Y)
                 claims = set()
                 for arg in self.arguments:
                     prems = arg.get_premises()
                     if prems is not None:
                         if prems.issubset(X):
                             claims.add(arg.get_conclusion())
+                            
+                # si X contient uniquement un élément préféré  et qu'il est différent de Y il est forcément préféré à Y
+                Y_is_strict_pref = (len(Y) == 1 and Y.issubset(self.prefs.keys()) and X != Y)
                 
-                if not self.check_preference_set(Y, X):
+                if not self.check_preference_set(Y, X) and not Y_is_strict_pref:
                     if any(self.assumptions_and_contraries[y] == claim for y in Y for claim in claims):
+                        X_str = ', '.join(str(x) for x in X)
+                        Y_str = ', '.join(str(y) for y in Y)
+                        attacks.add(f"{{{X_str}}} -> {{{Y_str}}}")
+        return attacks
+    
+    def compute_reverse_attacks(self):
+        self.compute_arguments()
+        attacks = set()
+        all_subsets = []
+        
+        for r in range(1, len(self.assumptions) + 1):
+            all_subsets.extend(itertools.combinations(self.assumptions, r))
+        
+        for X in all_subsets:
+            for Y in all_subsets:       
+                      
+                claims = set()
+                for arg in self.arguments:
+                    prems = arg.get_premises()
+                    if prems is not None:
+                        if prems.issubset(Y):
+                            claims.add(arg.get_conclusion())
+                            
+                if any(self.check_preference(x, y) for x in X for y in Y):
+                    if any(self.assumptions_and_contraries[x] == claim for x in X for claim in claims):
                         X_str = ', '.join(str(x) for x in X)
                         Y_str = ', '.join(str(y) for y in Y)
                         attacks.add(f"{{{X_str}}} -> {{{Y_str}}}")
@@ -287,3 +308,9 @@ if __name__ == "__main__":
     
     for n_att in normal_attacks:
         print(n_att)
+        
+    reverse_attacks = aba.compute_reverse_attacks()
+    print(f'len reverse att: {len(reverse_attacks)}')
+    
+    for r_att in reverse_attacks:
+        print(r_att)

@@ -68,5 +68,15 @@ norm_attack = aba_lesson4B.compute_normal_attacks()
 if len(norm_attack) == 0:
     print(f'len norm_attacks 4B is 0')
 
+print('\nnormal attacks:')
 for norm_att in norm_attack:
     print(norm_att)
+    
+reverse_attacks = aba_lesson4B.compute_reverse_attacks()
+
+if len(reverse_attacks) == 0:
+    print(f'len rev attacks 4B is 0')
+
+print('\nreverse attacks:')
+for rev_att in reverse_attacks:
+    print(rev_att)
