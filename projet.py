@@ -209,78 +209,55 @@ class ABAPlus:
     def check_preference(self, claim, x_prime):
         """Vérifie si la préférence entre deux éléments existe et retourne True si elle est valide."""
         return (claim, x_prime) in self.prefs.items()
-
-    def derive_conclusion(self, subset):
-            conclusions = set()
-            for arg in self.arguments:
-                if arg.get_premises() is not None and arg.get_premises().issubset(subset):
-                    conclusions.add(arg.get_conclusion())
-            return conclusions if conclusions else None
     
-    def compute_normal_attacks2(self):
+    def check_preference_set(self, X: set, Y: set):
+        score_x = 0
+        score_y = 0
+        
+        X = set(X)
+        Y = set(Y)
+        # si X contient uniquement un élément préféré  et qu'il est différent de Y il est forcément préféré à Y
+        if len(X) == 1 and X.issubset(self.prefs.keys()) and X != Y:
+            return True
+        
+        for x in X:
+            for y in Y:
+                if self.check_preference(x, y) and x not in Y:
+                    score_x += 1 / (len(X) * len(Y))
+                if self.check_preference(y, x) and y not in X:
+                    score_y += 1 / (len(X) * len(Y))
+            
+        
+        return (score_x > score_y)
+    
+    def compute_normal_attacks(self):
         self.compute_arguments()
-        normal_attacks = set()
-        assumptions_list = list(self.assumptions)
-
-        all_subsets = [set(combo) for r in range(len(assumptions_list) + 1) for combo in itertools.combinations(assumptions_list, r)]
+        attacks = set()
+        all_subsets = []
+        
+        for r in range(1, len(self.assumptions) + 1):
+            all_subsets.extend(itertools.combinations(self.assumptions, r))
         
         for X in all_subsets:
             for Y in all_subsets:
-                if not X or not Y:
-                    continue
                 
-                X_str = ', '.join(map(str, X))
-                Y_str = ', '.join(map(str, Y))
+                X_str = ', '.join(str(x) for x in X)
+                Y_str = ', '.join(str(y) for y in Y)
+                                
+                claims = set()
+                for arg in self.arguments:
+                    prems = arg.get_premises()
+                    if prems is not None:
+                        if prems.issubset(X):
+                            claims.add(arg.get_conclusion())
                 
-                print(f'X is {X_str}')
-                print(f'Y is {Y_str}')
-                
-                claim_y = self.derive_conclusion(Y)
-                claim_x = self.derive_conclusion(X)
-                
-                claim_x_none = False
-                claim_y_none = False
-                
-                if claim_x is None:
-                    claim_x_none = True
-                
-                if claim_y is None:
-                    claim_y_none = True
-                
-                in_pref_y = False
-                if not claim_y_none:
-                    print("[" + ",".join(map(str, claim_y)) + "]")
-                    for claim in claim_y:
-                        for x_prime in X:
-                            if self.check_preference(claim, x_prime):
-                                in_pref_y = True
-                                break
-                
-                if not claim_x_none:
-                    print("[" + ",".join(map(str, claim_x)) + "]")
-                    in_pref_x = False
-                    for claim in claim_x:
-                        for y_prime in Y:
-                            if self.check_preference(claim, y_prime):
-                                in_pref_x = True
-                                break
-                
-                if not claim_y_none:
-                    if not any(self.check_preference(claim, x_prime) for claim in claim_y for x_prime in X) and not in_pref_y:
-                            X_str = ', '.join(map(str, X))
-                            Y_str = ', '.join(map(str, Y))
-                            print(f"added {X_str} -> {Y_str}")
-                            normal_attacks.add(f"{X_str} -> {Y_str}")
-                
-                if not claim_x_none:
-                    if not any(self.check_preference(claim, y_prime) for claim in claim_x for y_prime in Y) and not in_pref_x:
-                            X_str = ', '.join(map(str, X))
-                            Y_str = ', '.join(map(str, Y))
-                            print(f"added {Y_str} -> {X_str}")
-                            normal_attacks.add(f"{Y_str} -> {X_str}")
-        return normal_attacks
-                
-    
+                if not self.check_preference_set(Y, X):
+                    if any(self.assumptions_and_contraries[y] == claim for y in Y for claim in claims):
+                        X_str = ', '.join(str(x) for x in X)
+                        Y_str = ', '.join(str(y) for y in Y)
+                        attacks.add(f"{{{X_str}}} -> {{{Y_str}}}")
+        return attacks
+
 if __name__ == "__main__":
     # exo 1 TD4
     langage = set[Literals]([Literals('a', None), Literals('b', None), Literals('c', None), Literals(

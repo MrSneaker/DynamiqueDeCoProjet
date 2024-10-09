@@ -58,7 +58,12 @@ for great, less in prefs4B.items():
 
 aba_lesson4B = ABAPlus(language4B, assumptions4B, rules4B, prefs4B)
 
-norm_attack = aba_lesson4B.compute_normal_attacks2()
+args4B = aba_lesson4B.compute_arguments()
+
+for arg in args4B:
+    print(arg)
+
+norm_attack = aba_lesson4B.compute_normal_attacks()
 
 if len(norm_attack) == 0:
     print(f'len norm_attacks 4B is 0')
