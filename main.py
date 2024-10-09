@@ -1,4 +1,4 @@
-from utils import parse_input
+from utils import *
 from projet import *
 
 # exo 1 TD4
@@ -79,4 +79,26 @@ if len(reverse_attacks) == 0:
 
 print('\nreverse attacks:')
 for rev_att in reverse_attacks:
+    print(rev_att)
+    
+    
+_, _, _, prefsTest = load_and_read_file('exampleTest.txt')
+
+for k, v in prefsTest.items():
+    print(f'{k} > {v}')
+    
+languageExample, assumptionsExample, rulesExample, prefsExample = load_and_read_file('exampleTest.txt')
+
+aba_example = ABAPlus(languageExample, assumptionsExample, rulesExample, prefsExample)
+
+print('\narg example :')
+for arg in aba_example.compute_arguments():
+    print(arg)
+
+print('\nnorm att example :')
+for norm_att in aba_example.compute_normal_attacks():
+    print(norm_att)
+    
+print('\nrev att example :')
+for rev_att in aba_example.compute_reverse_attacks():
     print(rev_att)

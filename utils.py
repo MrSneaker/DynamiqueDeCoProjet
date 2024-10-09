@@ -27,7 +27,14 @@ def parse_input(input_string: str):
                     set_premises.add(Literals(p, None))
                 rules.add(Rules(set_premises, Literals(head, None)))
         elif line.startswith('PREF:'):
-            pref_match = re.findall(r'(\w+)\s*>\s*(\w+)', line[5:].strip())
-            for greater, lesser in pref_match:
-                prefs[Literals(greater, None)] = Literals(lesser, None)
+            pref_match = re.findall(r'([\w\s,]+)\s*>\s*(\w+)', line.strip())
+
+            for greater_group, lesser in pref_match:
+                greater_elements = [elem.strip() for elem in greater_group.split(',')]
+                for greater in greater_elements:
+                    prefs[Literals(greater, None)] = Literals(lesser, None)
     return language, assumptions_and_contraries, rules, prefs
+
+def load_and_read_file(file_path: str):
+    with open(file_path, "r") as file:
+        return parse_input(file.read())
